@@ -161,6 +161,11 @@ def train_model(config):
             print(f"GPU: {config['local_rank']} - Preloading model: {model_filename}")
             state = torch.load(model_filename)
             model.load_state_dict(state["model_state_dict"])
+            sd = ckpt["model_state_dict"]
+            print("checkpoint keys:", list(sd.keys())[:10])
+
+            # and compare to your model’s keys:
+            print("model keys:", list(model.state_dict().keys())[:10])
             initial_epoch = state["epoch"] + 1
             optimizer.load_state_dict(state["optimizer_state_dict"])
             global_step = state["global_step"]
