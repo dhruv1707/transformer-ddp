@@ -36,19 +36,17 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
 
         # Build mask for decoder
         decoder_mask = causal_mask(decoder_input.shape[1]).type_as(encoder_mask).to(device)
-        print(f"Decoder mask:{decoder_mask}")
         # Calculate the decoder output
         decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
 
-        probs = model.module.project(decoder_output[:, -1])
-        print(f"Probs shape: {probs.shape}")
+        probs = model.module.project(decoder_output[:, -1, :])
         # Taking the token which has the highest probs (greedy)
         _,next_token = torch.max(probs, dim=-1)
-        if next_token == eos_index:
+        next_id = next_token.item()
+        if next_id == eos_index:
             break
-        print(f"Next token: {next_token}")
         decoder_input = torch.cat([decoder_input, torch.empty(1,1).type_as(encoder_input).fill_(next_token.item()).to(device)], dim=1)
-    return decoder_input.squeeze(0)
+    return decoder_input.squeeze(0).tolist()
 
 
 
@@ -224,7 +222,8 @@ def train_model(config):
 
             run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, val_dataloader, lambda msg: batch_trainer.write(msg), device, config["seq_len"])
             # Save the model after every epoch
-            model_filename = get_weights_file_path(config, f"{epoch: 02d}")
+            model_filename = get_weights_file_path(config, f"{epoch:02d}")
+            print(f"[rank {config['global_rank']}] checkpoint path: {model_filename!r}")
             torch.save({
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),
