@@ -133,7 +133,9 @@ def get_model(config, src_vocab_size, target_vocab_size):
 
 def train_model(config):
     assert torch.cuda.is_available(), "Training on CPU not supported"
-    device = torch.device("cuda")
+    local_rank = config["local_rank"]
+    torch.cuda.set_device(local_rank)
+    device = torch.device(f"cuda:{local_rank}")
     print(f"GPU: {config['local_rank']} - Using device: {device}")
 
     Path(config["model_folder"]).mkdir(parents=True, exist_ok=True)
