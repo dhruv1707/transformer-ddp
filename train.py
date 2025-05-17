@@ -262,8 +262,8 @@ if __name__=="__main__":
         print("Configuration:")
         for key, value in config.items():
             print(f"{key:>20}: {value}")
-    init_process_group(backend="nccl", init_method="env://")
     torch.cuda.set_device(config["local_rank"])
+    init_process_group(backend="nccl")
 
     train_model(config)
     destroy_process_group()
