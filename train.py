@@ -25,7 +25,7 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
     sos_index = src_tokenizer.token_to_id("[SOS]")
     eos_index = src_tokenizer.token_to_id("[EOS]")
 
-    encoder_output = model.encode(encoder_input, encoder_mask)
+    encoder_output = model.module.encode(encoder_input, encoder_mask)
 
     # Initialize the deocder input with the SOS token
     decoder_input = torch.empty(1,1).type_as(encoder_input).fill_(sos_index).to(device)
@@ -38,9 +38,9 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
         decoder_mask = causal_mask(decoder_input.shape[1]).type_as(encoder_mask).to(device)
         print(f"Decoder mask:{decoder_mask}")
         # Calculate the decoder output
-        decoder_output = model.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
+        decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
 
-        probs = model.project(decoder_output[:, -1])
+        probs = model.module.project(decoder_output[:, -1])
         print(f"Probs shape: {probs.shape}")
         # Taking the token which has the highest probs (greedy)
         _,next_token = torch.max(probs, dim=-1)
@@ -53,7 +53,7 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
 
 
 def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, validation_ds, print_msg, device, max_len, num_examples=2):
-    model.eval()
+    model.module.eval()
     count = 0
     console_width = 80
     with torch.no_grad():
