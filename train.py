@@ -152,7 +152,7 @@ def train_model(config):
     wandb_run_id = None
 
     if config["preload"] != "":
-        
+
         if config["preload"] == "latest":
             model_filename = get_latest_weights_file_path(config)
         else:
@@ -260,7 +260,9 @@ if __name__=="__main__":
         print("Configuration:")
         for key, value in config.items():
             print(f"{key:>20}: {value}")
-    init_process_group(backend="nccl")
+    print(f"[{os.environ['NODE_RANK']}][rank={os.environ.get('RANK')}] About to init_process_group")
+    init_process_group(backend="nccl", init_method="env://")
+    print(f"[{os.environ['NODE_RANK']}][rank={dist.get_rank()}] init_process_group succeeded")
     torch.cuda.set_device(config["local_rank"])
 
     train_model(config)
