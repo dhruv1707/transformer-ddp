@@ -150,6 +150,7 @@ def train_model(config):
     initial_epoch = 0
     global_step = 0
     wandb_run_id = None
+    model = DistributedDataParallel(model, device_ids=[config["local_rank"]])
 
     if config["preload"] != "":
 
@@ -161,7 +162,7 @@ def train_model(config):
             print(f"GPU: {config['local_rank']} - Preloading model: {model_filename}")
             state = torch.load(model_filename)
             model.load_state_dict(state["model_state_dict"])
-            sd = ckpt["model_state_dict"]
+            sd = state["model_state_dict"]
             print("checkpoint keys:", list(sd.keys())[:10])
 
             # and compare to your model’s keys:
@@ -181,7 +182,6 @@ def train_model(config):
             resume="allow",
             config=config
         )
-    model = DistributedDataParallel(model, device_ids=[config["local_rank"]])
     loss_fn = nn.CrossEntropyLoss(ignore_index=src_tokenizer.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
 
     if config["global_rank"] == 0:
