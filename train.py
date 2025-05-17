@@ -255,7 +255,7 @@ if __name__=="__main__":
 
     if config["local_rank"] == 0:
         print("Configuration:")
-        for key, value in config.__dict__.items():
+        for key, value in config.items():
             print(f"{key:>20}: {value}")
     init_process_group(backend="nccl")
     torch.cuda.set_device(config["local_rank"])
