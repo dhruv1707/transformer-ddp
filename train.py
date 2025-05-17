@@ -22,8 +22,8 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.distributed import init_process_group, destroy_process_group
 
 def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_tokenizer, max_len, device):
-    sos_index = src_tokenizer.token_to_id("[SOS]")
-    eos_index = src_tokenizer.token_to_id("[EOS]")
+    sos_index = target_tokenizer.token_to_id("[SOS]")
+    eos_index = target_tokenizer.token_to_id("[EOS]")
 
     encoder_output = model.module.encode(encoder_input, encoder_mask)
 
@@ -39,14 +39,14 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
         # Calculate the decoder output
         decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
 
-        probs = model.module.project(decoder_output[:, -1, :])
+        probs = model.module.project(decoder_output[:, -1])
         # Taking the token which has the highest probs (greedy)
-        _,next_token = torch.max(probs, dim=-1)
+        _,next_token = torch.max(probs, dim=1)
         next_id = next_token.item()
-        if next_id == eos_index:
-            break
         decoder_input = torch.cat([decoder_input, torch.empty(1,1).type_as(encoder_input).fill_(next_token.item()).to(device)], dim=1)
-    return decoder_input.squeeze(0).tolist()
+        if next_token == eos_index:
+            break
+    return decoder_input.squeeze(0)
 
 
 
@@ -64,7 +64,7 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
 
             source_text = batch["src_text"]
             target_text = batch["target_text"]
-            model_output_text = target_tokenizer.decode(model_out)
+            model_output_text = target_tokenizer.decode(model_out.detach().cpu().numpy())
 
             #Print to the console
             print_msg("-"*console_width)
