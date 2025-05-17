@@ -238,7 +238,7 @@ if __name__=="__main__":
     parser.add_argument('--seq_len', type=int, default=config["seq_len"])
     parser.add_argument('--d_model', type=int, default=config["d_model"])
     parser.add_argument('--lang_src', type=str, default=config["lang_src"])
-    parser.add_argument('--lang_target', type=str, default=config["lang_tgt"])
+    parser.add_argument('--lang_target', type=str, default=config["lang_target"])
     parser.add_argument('--model_folder', type=str, default=config["model_folder"])
     parser.add_argument('--model_basename', type=str, default=config["model_basename"])
     parser.add_argument('--preload', type=str, default=config["preload"])
