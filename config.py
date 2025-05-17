@@ -10,7 +10,7 @@ def get_config():
         "seq_len": 350,
         "d_model": 512,
         "model_folder": "weights",
-        "model_basename": "tmodel_ ",
+        "model_basename": "tmodel_",
         "preload": "latest",
         "tokenizer_path": "tokenizer_{0}.json",
         "experiment_name": "runs/model"
