@@ -1,0 +1,15 @@
+__pycache__
+*.pt
+*.json
+weights/
+
+wandb/
+
+.venv/
+venv/
+env/
+
+*.log
+logs/
+
+runs/
