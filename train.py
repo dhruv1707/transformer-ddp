@@ -134,7 +134,7 @@ def get_model(config, src_vocab_size, target_vocab_size):
 def train_model(config):
     assert torch.cuda.is_available(), "Training on CPU not supported"
     device = torch.device("cuda")
-    print(f"GPU: {config["local_rank"]} - Using device: {device}")
+    print(f"GPU: {config['local_rank']} - Using device: {device}")
 
     Path(config["model_folder"]).mkdir(parents=True, exist_ok=True)
 
@@ -155,7 +155,7 @@ def train_model(config):
         if config["preload"] == "latest":
             model_filename = get_weights_file_path(config, config["preload"])
         if model_filename is not None:
-            print(f"GPU: {config["local_rank"]} - Preloading model: {model_filename}")
+            print(f"GPU: {config['local_rank']} - Preloading model: {model_filename}")
             state = torch.load(model_filename)
             model.load_state_dict(state["model_state_dict"])
             initial_epoch = state["epoch"] + 1
@@ -164,7 +164,7 @@ def train_model(config):
             wandb_run_id = state["wandb_run_id"]
             del state
         else:
-            print(f"GPU: {config["local_rank"]} - Could not fnd model to preload")
+            print(f"GPU: {config['local_rank']} - Could not fnd model to preload")
 
     if config["global_rank"] == 0:
         wandb.init(
