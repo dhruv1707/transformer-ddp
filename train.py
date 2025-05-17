@@ -245,7 +245,7 @@ if __name__=="__main__":
     parser.add_argument('--tokenizer_path', type=str, default=config["tokenizer_path"])
     args = parser.parse_args()
 
-    config.__dict__.update(vars(args))
+    config.update(vars(args))
 
     config["local_rank"] = int(os.environ['LOCAL_RANK'])
     config["global_rank"] = int(os.environ['RANK'])
