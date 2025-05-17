@@ -12,7 +12,7 @@ from datasets import load_dataset
 from pathlib import Path
 from dataset import BilingualDataset, causal_mask
 from torch.utils.tensorboard import SummaryWriter
-from config import get_weights_file_path, get_config
+from config import get_weights_file_path, get_config, get_latest_weights_file_path
 from tqdm import tqdm
 import os
 import argparse
@@ -151,9 +151,12 @@ def train_model(config):
     global_step = 0
     wandb_run_id = None
 
-    if config["preload"]:
+    if config["preload"] != "":
+        
         if config["preload"] == "latest":
-            model_filename = get_weights_file_path(config, config["preload"])
+            model_filename = get_latest_weights_file_path(config)
+        else:
+            model_filename = get_weights_file_path(config, int(config["preload"]))
         if model_filename is not None:
             print(f"GPU: {config['local_rank']} - Preloading model: {model_filename}")
             state = torch.load(model_filename)

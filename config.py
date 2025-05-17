@@ -16,6 +16,16 @@ def get_config():
         "experiment_name": "runs/model"
     }
 
+def get_latest_weights_file_path(config):
+    model_folder = config["model_folder"]
+    model_basename = config["model_basename"]
+    model_files = Path(model_folder).glob(f"*.pt")
+    model_files = sorted(model_files, key=lambda x: int(x.stem.split('_')[-1]))
+    if len(model_files) == 0:
+        return None
+    model_filename = model_files[-1]
+    return str(model_filename)
+
 def get_weights_file_path(config, epoch):
     model_folder = config["model_folder"]
     model_basename = config["model_basename"]
