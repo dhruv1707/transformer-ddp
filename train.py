@@ -173,7 +173,7 @@ def train_model(config):
 
     if config["global_rank"] == 0:
         wandb.init(
-            projects="pytorch-transformer-distributed",
+            project="transformer-ddp",
             id=wandb_run_id,
             resume="allow",
             config=config
@@ -267,5 +267,3 @@ if __name__=="__main__":
 
     train_model(config)
     destroy_process_group()
-
-
