@@ -184,7 +184,7 @@ def train_model(config):
     for epoch in range(initial_epoch, config["num_epochs"]):
         torch.cuda.empty_cache()
         model.train()
-        batch_trainer = tqdm(train_dataloader, desc=f"Processing epoch {epoch: 02d} on rank {config["global_rank"]}", disable=config["local_rank"]!=0)
+        batch_trainer = tqdm(train_dataloader, desc=f"Processing epoch {epoch: 02d} on rank {config['global_rank']}", disable=config['local_rank']!=0)
         for batch in batch_trainer:
             encoder_input = batch["encoder_input"].to(device) # (Batch, Seq_len)
             # print(f"Encoder-input: {encoder_input}")
