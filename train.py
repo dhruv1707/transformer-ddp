@@ -64,7 +64,7 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
 
             source_text = batch["src_text"]
             target_text = batch["target_text"]
-            model_output_text = target_tokenizer.decode(model_out.tolist())
+            model_output_text = target_tokenizer.decode(model_out)
 
             #Print to the console
             print_msg("-"*console_width)
