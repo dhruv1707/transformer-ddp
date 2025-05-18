@@ -170,7 +170,7 @@ def train_model(config):
             initial_epoch = state["epoch"] + 1
             optimizer.load_state_dict(state["optimizer_state_dict"])
             global_step = state["global_step"]
-            wandb_run_id = state["wandb_run_id"]
+            # wandb_run_id = state["wandb_run_id"]
             del state
         else:
             print(f"GPU: {config['local_rank']} - Could not fnd model to preload")
