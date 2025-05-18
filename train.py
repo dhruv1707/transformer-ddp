@@ -22,30 +22,33 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.distributed import init_process_group, destroy_process_group
 
 def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_tokenizer, max_len, device):
-    sos_index = target_tokenizer.token_to_id("[SOS]")
-    eos_index = target_tokenizer.token_to_id("[EOS]")
+    sos_idx = target_tokenizer.token_to_id('[SOS]')
+    eos_idx = target_tokenizer.token_to_id('[EOS]')
 
+    # Precompute the encoder output and reuse it for every step
     encoder_output = model.module.encode(encoder_input, encoder_mask)
-
-    # Initialize the deocder input with the SOS token
-    decoder_input = torch.empty(1,1).type_as(encoder_input).fill_(sos_index).to(device)
-    print(f"Decoder input:{decoder_input}")
+    # Initialize the decoder input with the sos token
+    decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(encoder_input).to(device)
     while True:
-        if decoder_input.shape[1] == max_len:
+        if decoder_input.size(1) == max_len:
             break
 
-        # Build mask for decoder
-        decoder_mask = causal_mask(decoder_input.shape[1]).type_as(encoder_mask).to(device)
-        # Calculate the decoder output
-        decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
+        # build mask for target
+        decoder_mask = causal_mask(decoder_input.size(1)).type_as(encoder_mask).to(device)
 
-        probs = model.module.project(decoder_output[:, -1])
-        # Taking the token which has the highest probs (greedy)
-        _,next_token = torch.max(probs, dim=1)
-        next_id = next_token.item()
-        decoder_input = torch.cat([decoder_input, torch.empty(1,1).type_as(encoder_input).fill_(next_token.item()).to(device)], dim=1)
-        if next_token == eos_index:
+        # calculate output
+        out = model.module.decode(encoder_output, encoder_mask, decoder_input, decoder_mask)
+
+        # get next token
+        prob = model.module.project(out[:, -1])
+        _, next_word = torch.max(prob, dim=1)
+        decoder_input = torch.cat(
+            [decoder_input, torch.empty(1, 1).type_as(encoder_input).fill_(next_word.item()).to(device)], dim=1
+        )
+
+        if next_word == eos_idx:
             break
+
     return decoder_input.squeeze(0)
 
 
