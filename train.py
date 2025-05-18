@@ -191,7 +191,7 @@ def train_model(config):
             resume="allow",
             config=config
         )
-    loss_fn = nn.CrossEntropyLoss(ignore_index=target_tokenizer.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=src_tokenizer.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
 
     if config["global_rank"] == 0:
         wandb.define_metric("global_step")
