@@ -170,7 +170,7 @@ def train_model(config):
             initial_epoch = state["epoch"] + 1
             optimizer.load_state_dict(state["optimizer_state_dict"])
             global_step = state["global_step"]
-            # wandb_run_id = state["wandb_run_id"]
+            wandb_run_id = state["wandb_run_id"]
             del state
         else:
             print(f"GPU: {config['local_rank']} - Could not fnd model to preload")
@@ -231,9 +231,10 @@ def train_model(config):
             print(f"[rank {config['global_rank']}] checkpoint path: {model_filename!r}")
             torch.save({
                 "epoch": epoch,
-                "model_state_dict": model.state_dict(),
+                "model_state_dict": model.module.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
-                "global_step": global_step
+                "global_step": global_step,
+                'wandb_run_id': wandb.run.id
             }, model_filename)
     
 if __name__=="__main__":
