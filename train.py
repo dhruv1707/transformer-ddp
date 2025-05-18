@@ -44,7 +44,9 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
             prob = model.module.project(out[:, -1])
             print(f"Probabilities: {prob}")
             _, next_word = torch.max(prob, dim=1)
-            print(f"Next word: {next_word}")
+            print(f"Next word ID: {next_word.item()}")
+            token = target_tokenizer.id_to_token(next_word.item())
+            print(f"Mapped token: {token}")
             decoder_input = torch.cat(
                 [decoder_input, torch.empty(1, 1).type_as(encoder_input).fill_(next_word.item()).to(device)], dim=1
             )
