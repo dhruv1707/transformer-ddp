@@ -233,10 +233,11 @@ def train_model(config):
             optimizer.step()
             optimizer.zero_grad()
             global_step += 1
-            run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, val_dataloader, lambda msg: batch_trainer.write(msg), device, config["seq_len"])
-
+            
         if config["global_rank"] == 0:
             # Save the model after every epoch
+            run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, val_dataloader, lambda msg: batch_trainer.write(msg), device, config["seq_len"])
+
             model_filename = get_weights_file_path(config, f"{epoch:02d}")
             print(f"[rank {config['global_rank']}] checkpoint path: {model_filename!r}")
             torch.save({
