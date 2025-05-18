@@ -29,6 +29,7 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
     encoder_output = model.module.encode(encoder_input, encoder_mask)
     # Initialize the decoder input with the sos token
     decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(encoder_input).to(device)
+    model.eval()
     with torch.no_grad():
         while True:
             if decoder_input.size(1) == max_len:
@@ -106,7 +107,6 @@ def get_ds(config):
     src_tokenizer = get_or_build_tokenizer(config, ds_raw, config["lang_src"])
     target_tokenizer = get_or_build_tokenizer(config, ds_raw, config["lang_target"])
     print("Target vocab size:", target_tokenizer.get_vocab_size())
-    print("Special tokens:", target_tokenizer.special_tokens)
 
     # Split the dataset
     train_ds_size = int(0.9 * len(ds_raw))
