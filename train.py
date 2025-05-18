@@ -211,9 +211,10 @@ def train_model(config):
             decoder_mask = batch["decoder_mask"].to(device) # (B, 1, Seq_len, Seq_len)
             label = batch["label"].to(device) # (B, Seq_len)
 
-            encoder_output = model.module.encode(encoder_input, encoder_mask) # (B, Seq_len, d_model)
-            decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask) # (B, Seq_len, d_model)
-            projection_output = model.module.project(decoder_output) # (B, Seq_len, target_vocab_size)
+            # encoder_output = model.module.encode(encoder_input, encoder_mask) # (B, Seq_len, d_model)
+            # decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask) # (B, Seq_len, d_model)
+            # projection_output = model.module.project(decoder_output) # (B, Seq_len, target_vocab_size)
+            projection_output = model(encoder_input, encoder_mask, decoder_input, decoder_mask)
 
             loss = loss_fn(projection_output.view(-1, target_tokenizer.get_vocab_size()), label.view(-1))
             batch_trainer.set_postfix({f"loss": f"{loss.item(): 6.3f}"})
@@ -232,10 +233,9 @@ def train_model(config):
             optimizer.step()
             optimizer.zero_grad()
             global_step += 1
+            run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, val_dataloader, lambda msg: batch_trainer.write(msg), device, config["seq_len"])
 
         if config["global_rank"] == 0:
-
-            run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, val_dataloader, lambda msg: batch_trainer.write(msg), device, config["seq_len"])
             # Save the model after every epoch
             model_filename = get_weights_file_path(config, f"{epoch:02d}")
             print(f"[rank {config['global_rank']}] checkpoint path: {model_filename!r}")
