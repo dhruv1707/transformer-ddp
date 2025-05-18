@@ -211,10 +211,10 @@ def train_model(config):
             decoder_mask = batch["decoder_mask"].to(device) # (B, 1, Seq_len, Seq_len)
             label = batch["label"].to(device) # (B, Seq_len)
 
-            # encoder_output = model.module.encode(encoder_input, encoder_mask) # (B, Seq_len, d_model)
-            # decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask) # (B, Seq_len, d_model)
-            # projection_output = model.module.project(decoder_output) # (B, Seq_len, target_vocab_size)
-            projection_output = model(encoder_input, encoder_mask, decoder_input, decoder_mask)
+            encoder_output = model.module.encode(encoder_input, encoder_mask) # (B, Seq_len, d_model)
+            decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask) # (B, Seq_len, d_model)
+            projection_output = model.module.project(decoder_output) # (B, Seq_len, target_vocab_size)
+            # projection_output = model(encoder_input, encoder_mask, decoder_input, decoder_mask)
 
             loss = loss_fn(projection_output.view(-1, target_tokenizer.get_vocab_size()), label.view(-1))
             batch_trainer.set_postfix({f"loss": f"{loss.item(): 6.3f}"})
