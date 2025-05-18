@@ -12,9 +12,9 @@ class BilingualDataset(Dataset):
         self.seq_len = seq_len
         self.ds = ds
 
-        self.pad_token = torch.tensor([src_tokenizer.token_to_id("[PAD]")], dtype=torch.int64)
-        self.eos_token = torch.tensor([src_tokenizer.token_to_id("[EOS]")], dtype=torch.int64)
-        self.sos_token = torch.tensor([src_tokenizer.token_to_id("[SOS]")], dtype=torch.int64)
+        self.pad_token = torch.tensor([target_tokenizer.token_to_id("[PAD]")], dtype=torch.int64)
+        self.eos_token = torch.tensor([target_tokenizer.token_to_id("[EOS]")], dtype=torch.int64)
+        self.sos_token = torch.tensor([target_tokenizer.token_to_id("[SOS]")], dtype=torch.int64)
 
     def __len__(self):
         return len(self.ds)
@@ -46,19 +46,19 @@ class BilingualDataset(Dataset):
             torch.tensor(enc_input_tokens, dtype=torch.int64),
             self.eos_token,
             torch.tensor([self.pad_token] * enc_num_padding, dtype=torch.int64)
-        ])
+        ], dim=0)
 
         decoder_input = torch.cat([
             self.sos_token,
             torch.tensor(dec_input_tokens, dtype=torch.int64),
             torch.tensor([self.pad_token] * dec_num_padding, dtype=torch.int64)
-        ])
+        ], dim=0)
 
         label = torch.cat([
             torch.tensor(dec_input_tokens, dtype=torch.int64),
             self.eos_token,
             torch.tensor([self.pad_token] * dec_num_padding)
-        ])
+        ], dim=0)
 
         assert encoder_input.shape[0] == self.seq_len
         assert decoder_input.shape[0] == self.seq_len
@@ -69,7 +69,7 @@ class BilingualDataset(Dataset):
             "decoder_input": decoder_input, # (Seq_len)
             "label": label, # (Seq_len)
             "encoder_mask": (encoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int(), #(1, 1, Seq_len)
-            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int() & causal_mask(decoder_input.shape[0]),
+            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).int() & causal_mask(decoder_input.shape[0]),
             "src_text": src_input,
             "target_text": target_input
         }
