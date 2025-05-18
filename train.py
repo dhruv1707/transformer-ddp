@@ -29,28 +29,30 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
     encoder_output = model.module.encode(encoder_input, encoder_mask)
     # Initialize the decoder input with the sos token
     decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(encoder_input).to(device)
-    while True:
-        if decoder_input.size(1) == max_len:
-            break
+    with torch.no_grad():
+        while True:
+            if decoder_input.size(1) == max_len:
+                break
 
-        # build mask for target
-        decoder_mask = causal_mask(decoder_input.size(1)).type_as(encoder_mask).to(device)
+            # build mask for target
+            decoder_mask = causal_mask(decoder_input.size(1)).type_as(encoder_mask).to(device)
 
-        # calculate output
-        out = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
+            # calculate output
+            out = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
 
-        # get next token
-        prob = model.module.project(out[:, -1])
-        _, next_word = torch.max(prob, dim=1)
-        decoder_input = torch.cat(
-            [decoder_input, torch.empty(1, 1).type_as(encoder_input).fill_(next_word.item()).to(device)], dim=1
-        )
+            # get next token
+            prob = model.module.project(out[:, -1])
+            print(f"Probabilities: {prob}")
+            _, next_word = torch.max(prob, dim=1)
+            print(f"Next word: {next_word}")
+            decoder_input = torch.cat(
+                [decoder_input, torch.empty(1, 1).type_as(encoder_input).fill_(next_word.item()).to(device)], dim=1
+            )
 
-        if next_word == eos_idx:
-            break
+            if next_word == eos_idx:
+                break
 
     return decoder_input.squeeze(0)
-
 
 
 def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, validation_ds, print_msg, device, max_len, num_examples=2):
