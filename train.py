@@ -105,6 +105,8 @@ def get_ds(config):
     # Build the tokenizers
     src_tokenizer = get_or_build_tokenizer(config, ds_raw, config["lang_src"])
     target_tokenizer = get_or_build_tokenizer(config, ds_raw, config["lang_target"])
+    print("Target vocab size:", target_tokenizer.get_vocab_size())
+    print("Special tokens:", target_tokenizer.special_tokens)
 
     # Split the dataset
     train_ds_size = int(0.9 * len(ds_raw))
