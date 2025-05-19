@@ -3,7 +3,7 @@ from pathlib import Path
 def get_config():
     return {
         "lang_src": "en",
-        "lang_target": "it",
+        "lang_target": "hi",
         "batch_size": 8,
         "num_epochs": 20,
         "lr": 10**-4,

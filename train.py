@@ -101,7 +101,7 @@ def get_or_build_tokenizer(config, ds, language):
     return tokenizer
 
 def get_ds(config):
-    ds_raw = load_dataset("Helsinki-NLP/opus_books", f'{config["lang_src"]}-{config["lang_target"]}', split="train")
+    ds_raw = load_dataset("atrisaxena/mini-iitb-english-hindi", split="train")
 
     # Build the tokenizers
     src_tokenizer = get_or_build_tokenizer(config, ds_raw, config["lang_src"])
