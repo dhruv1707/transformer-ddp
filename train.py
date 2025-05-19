@@ -43,11 +43,11 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
 
             # get next token
             prob = model.module.project(out[:, -1])
-            print(f"Probabilities: {prob}")
+            # print(f"Probabilities: {prob}")
             _, next_word = torch.max(prob, dim=1)
-            print(f"Next word ID: {next_word.item()}")
+            # print(f"Next word ID: {next_word.item()}")
             token = target_tokenizer.id_to_token(next_word.item())
-            print(f"Mapped token: {token}")
+            # print(f"Mapped token: {token}")
             decoder_input = torch.cat(
                 [decoder_input, torch.empty(1, 1).type_as(encoder_input).fill_(next_word.item()).to(device)], dim=1
             )
@@ -233,7 +233,7 @@ def train_model(config):
             optimizer.step()
             optimizer.zero_grad()
             global_step += 1
-            
+
         if config["global_rank"] == 0:
             # Save the model after every epoch
             run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, val_dataloader, lambda msg: batch_trainer.write(msg), device, config["seq_len"])
