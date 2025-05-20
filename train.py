@@ -16,6 +16,7 @@ from config import get_weights_file_path, get_config, get_latest_weights_file_pa
 from tqdm import tqdm
 import os
 import argparse
+import torchmetrics
 
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel
@@ -47,7 +48,9 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
             _, next_word = torch.max(prob, dim=1)
             # print(f"Next word ID: {next_word.item()}")
             token = target_tokenizer.id_to_token(next_word.item())
-            # print(f"Mapped token: {token}")
+            print(f"Predicted ID: {next_word.item()} -> '{token}'")
+            print("Decoder_input: ", decoder_input)
+            print(f"Encoder_mask-shape: {encoder_mask.shape} Decoder_mask-shape: {decoder_mask.shape}")
             decoder_input = torch.cat(
                 [decoder_input, torch.empty(1, 1).type_as(encoder_input).fill_(next_word.item()).to(device)], dim=1
             )
@@ -62,6 +65,9 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
     model.module.eval()
     count = 0
     console_width = 80
+    source_texts = []
+    expected = []
+    predicted = []
     with torch.no_grad():
         for batch in validation_ds:
             count += 1
@@ -74,6 +80,10 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
             target_text = batch["target_text"]
             model_output_text = target_tokenizer.decode(model_out.detach().cpu().numpy())
 
+            source_texts.append(source_text)
+            expected.append(target_text)
+            predicted.append(model_output_text)
+
             #Print to the console
             print_msg("-"*console_width)
             print_msg(f"SOURCE:{source_text}")
@@ -82,6 +92,19 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
 
             if count == num_examples:
                 break
+        
+        metric = torchmetrics.CharErrorRate()
+        cer = metric(predicted, expected)
+        wandb.log({'validation/cer': cer, 'global_step': global_step})
+
+        metric = torchmetrics.WordErrorRate()
+        wer = metric(predicted, expected)
+        wandb.log({'validation/wer': wer, 'global_step': global_step})
+
+        metric = torchmetrics.BLEUScore()
+        bleu = metric(predicted, expected)
+        wandb.log({'validation/BLEU': bleu, 'global_step': global_step})
+
 
 def get_all_sentences(ds, language):
     for item in ds:
