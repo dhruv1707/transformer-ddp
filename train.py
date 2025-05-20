@@ -26,6 +26,7 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
     sos_idx = target_tokenizer.token_to_id('[SOS]')
     eos_idx = target_tokenizer.token_to_id('[EOS]')
     print("SOS Index:", sos_idx)
+    print("EOS Index:", eos_idx)
 
     # Precompute the encoder output and reuse it for every step
     encoder_output = model.module.encode(encoder_input, encoder_mask)
