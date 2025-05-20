@@ -25,6 +25,7 @@ from torch.distributed import init_process_group, destroy_process_group
 def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_tokenizer, max_len, device):
     sos_idx = target_tokenizer.token_to_id('[SOS]')
     eos_idx = target_tokenizer.token_to_id('[EOS]')
+    print("SOS Index:", sos_idx)
 
     # Precompute the encoder output and reuse it for every step
     encoder_output = model.module.encode(encoder_input, encoder_mask)
@@ -45,8 +46,11 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
             # get next token
             prob = model.module.project(out[:, -1])
             # print(f"Probabilities: {prob}")
+            topk = prob.topk(5)
             _, next_word = torch.max(prob, dim=1)
             # print(f"Next word ID: {next_word.item()}")
+            print("Top tokens:", target_tokenizer.decode(topk.indices.tolist()))
+            print("Probs:", topk.values.tolist())
             token = target_tokenizer.id_to_token(next_word.item())
             print(f"Predicted ID: {next_word.item()} -> '{token}'")
             print("Decoder_input: ", decoder_input)
