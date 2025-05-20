@@ -83,7 +83,7 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
 
             source_text = batch["src_text"][0]
             target_text = batch["target_text"][0]
-            model_output_text = target_tokenizer.decode(model_out.detach().cpu().numpy())
+            model_output_text = target_tokenizer.decode(model_out.detach().cpu().numpy(), skip_special_tokens=True)
 
             source_texts.append(source_text)
             expected.append(target_text)
@@ -135,6 +135,7 @@ def get_ds(config):
     src_tokenizer = get_or_build_tokenizer(config, ds_raw, config["lang_src"])
     target_tokenizer = get_or_build_tokenizer(config, ds_raw, config["lang_target"])
     print("Target vocab size:", target_tokenizer.get_vocab_size())
+    print("Src vocab size:", src_tokenizer.get_vocab_size())
 
     # Split the dataset
     train_ds_size = int(0.9 * len(ds_raw))
@@ -231,6 +232,8 @@ def train_model(config):
         model.train()
         batch_trainer = tqdm(train_dataloader, desc=f"Processing epoch {epoch: 02d} on rank {config['global_rank']}", disable=config['local_rank']!=0)
         for batch in batch_trainer:
+            print("Label IDs:", batch["label"][0])
+            print("Decoded label:", target_tokenizer.decode(batch["label"][0].tolist()))
             encoder_input = batch["encoder_input"].to(device) # (Batch, Seq_len)
             # print(f"Encoder-input: {encoder_input}")
             decoder_input = batch["decoder_input"].to(device) # (B, Seq_len)
