@@ -240,7 +240,6 @@ def train_model(config):
             label = batch["label"].to(device) # (B, Seq_len)
 
             encoder_output = model.module.encode(encoder_input, encoder_mask) # (B, Seq_len, d_model)
-            print("Encoder output shape:", encoder_output.shape)
             decoder_output = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask) # (B, Seq_len, d_model)
             projection_output = model.module.project(decoder_output) # (B, Seq_len, target_vocab_size)
             # projection_output = model(encoder_input, encoder_mask, decoder_input, decoder_mask)
