@@ -76,8 +76,8 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
             assert encoder_input.shape[0] == 1, "Batch size must be 1"
             model_out = greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_tokenizer, max_len, device)
 
-            source_text = batch["src_text"]
-            target_text = batch["target_text"]
+            source_text = batch["src_text"][0]
+            target_text = batch["target_text"][0]
             model_output_text = target_tokenizer.decode(model_out.detach().cpu().numpy())
 
             source_texts.append(source_text)
@@ -96,7 +96,7 @@ def run_validation(model, src_tokenizer, target_tokenizer, writer, global_step, 
         metric = torchmetrics.CharErrorRate()
         cer = metric(predicted, expected)
         wandb.log({'validation/cer': cer, 'global_step': global_step})
-
+        
         metric = torchmetrics.WordErrorRate()
         wer = metric(predicted, expected)
         wandb.log({'validation/wer': wer, 'global_step': global_step})
