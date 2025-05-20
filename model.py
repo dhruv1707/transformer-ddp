@@ -87,6 +87,10 @@ class MultiHeadAttentionBlock(nn.Module):
     def attention(query, key, value, d_k, mask, dropout):
         # (Batch, h, seq_len, d_k) --> (Batch, h, seq_len, seq_len)
         # print(f"Query:{query.shape}, Key: {key.shape}, Value: {value.shape}")
+        print("Query shape:", query.shape)
+        print("Key shape:", key.shape)
+        print("Value shape:", value.shape)
+        print("Mask shape:", mask.shape if mask is not None else "No mask")
         attention_output = (query @ key.transpose(2, 3))/(math.sqrt(d_k))
         if mask is not None:
             attention_output.masked_fill(mask == 0, 1e-9)
