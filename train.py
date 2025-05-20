@@ -240,7 +240,7 @@ def train_model(config):
             # projection_output = model(encoder_input, encoder_mask, decoder_input, decoder_mask)
 
             loss = loss_fn(projection_output.view(-1, target_tokenizer.get_vocab_size()), label.view(-1))
-            batch_trainer.set_postfix({f"loss": f"{loss.item(): 6.3f}"})
+            batch_trainer.set_postfix({"loss": f"{loss.item():6.3f}", "global_step": global_step})
 
             if config["global_rank"] == 0:
                 wandb.log({'train/loss': loss.item(), 'global step': global_step})
