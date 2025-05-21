@@ -51,10 +51,8 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
             _, next_word = torch.max(prob, dim=1)
             # print(f"Next word ID: {next_word.item()}")
             print("Top tokens:", target_tokenizer.decode(topk.indices[0].tolist()))
-            print("Probs:", topk.values.tolist())
             token = target_tokenizer.id_to_token(next_word.item())
             print(f"Predicted ID: {next_word.item()} -> '{token}'")
-            print("Decoder_input: ", decoder_input)
             print(f"Encoder_mask-shape: {encoder_mask.shape} Decoder_mask-shape: {decoder_mask.shape}")
             decoder_input = torch.cat(
                 [decoder_input, torch.empty(1, 1).type_as(encoder_input).fill_(next_word.item()).to(device)], dim=1
