@@ -33,6 +33,7 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
     # Initialize the decoder input with the sos token
     decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(encoder_input).to(device)
     model.eval()
+    temperature =0.8
     with torch.no_grad():
         while True:
             if decoder_input.size(1) == max_len:
@@ -43,12 +44,12 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
 
             # calculate output
             out = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
-
             # get next token
             prob = model.module.project(out[:, -1])
+            scaled_probs = prob/temperature
             # print(f"Probabilities: {prob}")
             topk = prob.topk(5)
-            _, next_word = torch.max(prob, dim=1)
+            _, next_word = torch.max(scaled_probs, dim=1)
             # print(f"Next word ID: {next_word.item()}")
             print("Top tokens:", target_tokenizer.decode(topk.indices[0].tolist()))
             token = target_tokenizer.id_to_token(next_word.item())
