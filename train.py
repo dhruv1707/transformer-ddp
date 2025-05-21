@@ -230,7 +230,7 @@ def train_model(config):
         model.train()
         batch_trainer = tqdm(train_dataloader, desc=f"Processing epoch {epoch: 02d} on rank {config['global_rank']}", disable=config['local_rank']!=0)
         for batch in batch_trainer:
-            print("Label IDs:", batch["label"][0])
+            # print("Label IDs:", batch["label"][0])
             print("Decoded label:", target_tokenizer.decode(batch["label"][0].tolist()))
             encoder_input = batch["encoder_input"].to(device) # (Batch, Seq_len)
             # print(f"Encoder-input: {encoder_input}")
