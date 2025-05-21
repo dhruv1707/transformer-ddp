@@ -167,11 +167,15 @@ def get_model(config, src_vocab_size, target_vocab_size):
 
 
 def train_model(config):
-    assert torch.cuda.is_available(), "Training on CPU not supported"
-    local_rank = config["local_rank"]
-    torch.cuda.set_device(local_rank)
-    device = torch.device(f"cuda:{local_rank}")
-    print(f"GPU: {config['local_rank']} - Using device: {device}")
+    # assert torch.cuda.is_available(), "Training on CPU not supported"
+    use_cuda = torch.cuda.is_available() and os.environ.get("CUDA_VISIBLE_DEVICES", "") != ""
+    if use_cuda:
+        local_rank = config["local_rank"]
+        torch.cuda.set_device(local_rank)
+        device = torch.device(f"cuda:{local_rank}")
+        print(f"GPU: {config['local_rank']} - Using device: {device}")
+    else:
+        device = torch.device("cpu")
 
     Path(config["model_folder"]).mkdir(parents=True, exist_ok=True)
 
@@ -187,7 +191,10 @@ def train_model(config):
     initial_epoch = 0
     global_step = 0
     wandb_run_id = None
-    model = DistributedDataParallel(model, device_ids=[config["local_rank"]])
+    if use_cuda:
+        model = DistributedDataParallel(model, device_ids=[config["local_rank"]])
+    else:
+        model = DistributedDataParallel(model)
 
     if config["preload"] != "":
 
@@ -227,7 +234,8 @@ def train_model(config):
         wandb.define_metric("train/*", step_metric="global_step")
 
     for epoch in range(initial_epoch, config["num_epochs"]):
-        torch.cuda.empty_cache()
+        if use_cuda:
+            torch.cuda.empty_cache()
         model.train()
         batch_trainer = tqdm(train_dataloader, desc=f"Processing epoch {epoch: 02d} on rank {config['global_rank']}", disable=config['local_rank']!=0)
         for batch in batch_trainer:
@@ -298,6 +306,8 @@ if __name__=="__main__":
 
     config["local_rank"] = int(os.environ['LOCAL_RANK'])
     config["global_rank"] = int(os.environ['RANK'])
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    is_ddp = world_size > 1
 
     assert config["local_rank"] != -1
     assert config["global_rank"] != -1
@@ -307,7 +317,10 @@ if __name__=="__main__":
         for key, value in config.items():
             print(f"{key:>20}: {value}")
     torch.cuda.set_device(config["local_rank"])
-    init_process_group(backend="nccl")
+    # init_process_group(backend="nccl")
+    if is_ddp:
+        init_process_group(backend="gloo")
 
     train_model(config)
-    destroy_process_group()
+    if is_ddp:
+        destroy_process_group()
