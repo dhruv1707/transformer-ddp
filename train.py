@@ -41,7 +41,6 @@ def greedy_decode(model, encoder_input, encoder_mask, src_tokenizer, target_toke
 
             # build mask for target
             decoder_mask = causal_mask(decoder_input.size(1)).type_as(encoder_mask).to(device)
-
             # calculate output
             out = model.module.decode(encoder_output, decoder_input, encoder_mask, decoder_mask)
             # get next token
@@ -304,8 +303,8 @@ if __name__=="__main__":
 
     config.update(vars(args))
 
-    config["local_rank"] = int(os.environ['LOCAL_RANK'])
-    config["global_rank"] = int(os.environ['RANK'])
+    config["local_rank"] = int(os.environ.get('LOCAL_RANK', '0'))
+    config["global_rank"] = int(os.environ.get('RANK', '0'))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     is_ddp = world_size > 1
 
@@ -316,10 +315,16 @@ if __name__=="__main__":
         print("Configuration:")
         for key, value in config.items():
             print(f"{key:>20}: {value}")
-    torch.cuda.set_device(config["local_rank"])
+    if torch.cuda.is_available():
+        torch.cuda.set_device(config["local_rank"])
     # init_process_group(backend="nccl")
     if is_ddp:
-        init_process_group(backend="gloo")
+        init_process_group(backend="nccl")
+    else:
+        init_process_group(backend="gloo",
+                           init_method="tcp://127.0.0.1:29500",
+                           world_size=world_size,
+                           rank=config["global_rank"])
 
     train_model(config)
     if is_ddp:

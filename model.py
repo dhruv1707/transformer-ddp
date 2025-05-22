@@ -68,7 +68,7 @@ class FeedForwardBlock(nn.Module):
         self.relu = nn.ReLU()
     
     def forward(self, x):
-        return self.linear_2(self.dropout(self.relu(self.linear_1(x))))
+        return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
 
 class MultiHeadAttentionBlock(nn.Module):
     def __init__(self, h: int, dropout: float, d_model: int):
@@ -92,7 +92,8 @@ class MultiHeadAttentionBlock(nn.Module):
             attention_output.masked_fill(~mask.bool(), -1e9)
         attention_scores = attention_output.softmax(dim = -1) # (Batch, h, seq_len, seq_len)
         # print(f"Attention output: {attention_output.shape}, Attention score:{attention_scores.shape}")
-        attention_scores = dropout(attention_scores)
+        if dropout is not None:
+            attention_scores = dropout(attention_scores)
         return (attention_scores @ value),attention_scores
     
     def forward(self, q, k, v, mask):
