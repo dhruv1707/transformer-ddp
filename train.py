@@ -167,7 +167,7 @@ def get_model(config, src_vocab_size, target_vocab_size):
 
 def train_model(config):
     # assert torch.cuda.is_available(), "Training on CPU not supported"
-    use_cuda = torch.cuda.is_available() and os.environ.get("CUDA_VISIBLE_DEVICES", "") != ""
+    use_cuda = torch.cuda.is_available()
     if use_cuda:
         local_rank = config["local_rank"]
         torch.cuda.set_device(local_rank)
@@ -191,6 +191,7 @@ def train_model(config):
     global_step = 0
     wandb_run_id = None
     if use_cuda:
+        model.to(device)
         model = DistributedDataParallel(model, device_ids=[config["local_rank"]])
     else:
         model = DistributedDataParallel(model)
