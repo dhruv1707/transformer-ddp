@@ -40,16 +40,16 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         # print(f"PE Shape: {self.pe.shape}")
-        x = x + (self.pe[:, :x.shape[1], :])
+        x = x + (self.pe[:, :x.shape[1], :]).requires_grad_(False)
         return self.dropout(x)
 
 class LayerNormalization(nn.Module):
-    def __init__(self, eps: float=10**-6):
+    def __init__(self, features: int, eps: float=10**-6):
         super().__init__()
         self.eps = eps
         # adding fluctuation in the data to make the model not too restrictive between 0 and 1 always. Tune these parameters so the model can learn to amplify values when necessary
-        self.alpha = nn.Parameter(torch.ones(1)) # Multiplied
-        self.bias = nn.Parameter(torch.zeros(1)) # Added
+        self.alpha = nn.Parameter(torch.ones(features)) # Multiplied
+        self.bias = nn.Parameter(torch.zeros(features)) # Added
     
     def forward(self, x):
         mean = x.mean(dim=-1, keepdim=True)
@@ -65,7 +65,6 @@ class FeedForwardBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.linear_1 = nn.Linear(d_model, d_ff) # W1 and b1
         self.linear_2 = nn.Linear(d_ff, d_model) # W2 and b2
-        self.relu = nn.ReLU()
     
     def forward(self, x):
         return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
@@ -77,10 +76,10 @@ class MultiHeadAttentionBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.d_model = d_model
         assert d_model % h == 0, "d_model is not divisible by 0"
-        self.w_q = nn.Linear(d_model, d_model) # (Batch, seq_len, d_model)
-        self.w_k = nn.Linear(d_model, d_model)
-        self.w_v = nn.Linear(d_model, d_model)
-        self.w_o = nn.Linear(d_model, d_model)
+        self.w_q = nn.Linear(d_model, d_model, bias=False) # (Batch, seq_len, d_model)
+        self.w_k = nn.Linear(d_model, d_model, bias=False)
+        self.w_v = nn.Linear(d_model, d_model, bias=False)
+        self.w_o = nn.Linear(d_model, d_model, bias=False)
         self.d_k = d_model // h
     
     @staticmethod
@@ -107,20 +106,20 @@ class MultiHeadAttentionBlock(nn.Module):
         return self.w_o(x)
 
 class ResidualConnection(nn.Module):
-    def __init__(self, dropout: int):
+    def __init__(self, features: int, dropout: int):
         super().__init__()
         self.dropout = nn.Dropout(dropout)
-        self.norm = LayerNormalization()
+        self.norm = LayerNormalization(features)
     
     def forward(self, x, prev_output):
         return x + self.dropout(prev_output(self.norm(x)))
 
 class EncoderBlock(nn.Module):
-    def __init__(self, multi_head_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
+    def __init__(self, features: int, multi_head_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
         super().__init__()
         self.multi_head_attention_block = multi_head_attention_block
         self.feed_forward_block =  feed_forward_block
-        self.residual_connection = nn.ModuleList([ResidualConnection(dropout) for i in range(2)])
+        self.residual_connection = nn.ModuleList([ResidualConnection(features, dropout) for i in range(2)])
         self.dropout = dropout
     
     def forward(self, x, src_mask):
@@ -129,10 +128,10 @@ class EncoderBlock(nn.Module):
         return x
     
 class Encoder(nn.Module):
-    def __init__(self, layers: nn.ModuleList):
+    def __init__(self, features: int, layers: nn.ModuleList):
         super().__init__()
         self.layers = layers
-        self.norm = LayerNormalization()
+        self.norm = LayerNormalization(features)
     
     def forward(self, x, mask):
         for layer in self.layers:
@@ -140,13 +139,13 @@ class Encoder(nn.Module):
         return self.norm(x)
 
 class DecoderBlock(nn.Module):
-    def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, dropout: float, feed_forward_block:  FeedForwardBlock):
+    def __init__(self, features: int, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, dropout: float, feed_forward_block:  FeedForwardBlock):
         super().__init__()
         self.self_attention_block = self_attention_block
         self.cross_attention_block = cross_attention_block
         self.feed_forward_block = feed_forward_block
         self.dropout = dropout
-        self.residual_connection = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
+        self.residual_connection = nn.ModuleList([ResidualConnection(features, dropout) for _ in range(3)])
 
     def forward(self, x, encoder_output, src_mask, target_mask):
         x = self.residual_connection[0](x, lambda x: self.self_attention_block(x, x, x, target_mask))
@@ -155,10 +154,10 @@ class DecoderBlock(nn.Module):
         return x
     
 class Decoder(nn.Module):
-    def __init__(self, layers: nn.ModuleList):
+    def __init__(self, features: int, layers: nn.ModuleList):
         super().__init__()
         self.layers = layers
-        self.norm = LayerNormalization()
+        self.norm = LayerNormalization(features)
     
     def forward(self, x, encoder_output, src_mask, target_mask):
         for layer in self.layers:
@@ -218,7 +217,7 @@ def build_transformer(src_vocab_size: int, target_vocab_size: int, src_seq_len: 
     for _ in range(N):
         enc_self_attention = MultiHeadAttentionBlock(h, dropout, d_model)
         enc_feed_forward = FeedForwardBlock(d_ff, d_model, dropout)
-        encoder_block = EncoderBlock(enc_self_attention, enc_feed_forward, dropout)
+        encoder_block = EncoderBlock(d_model, enc_self_attention, enc_feed_forward, dropout)
         encoder_blocks.append(encoder_block)
 
     # Create the Decoder
@@ -227,12 +226,12 @@ def build_transformer(src_vocab_size: int, target_vocab_size: int, src_seq_len: 
         dec_self_attention = MultiHeadAttentionBlock(h, dropout, d_model)
         dec_cross_attention = MultiHeadAttentionBlock(h, dropout, d_model)
         dec_feed_forward = FeedForwardBlock(d_ff, d_model, dropout)
-        decoder_block = DecoderBlock(dec_self_attention, dec_cross_attention, dropout, dec_feed_forward)
+        decoder_block = DecoderBlock(d_model, dec_self_attention, dec_cross_attention, dropout, dec_feed_forward)
         decoder_blocks.append(decoder_block)
     
-    encoder = Encoder(nn.ModuleList(encoder_blocks))
+    encoder = Encoder(d_model, nn.ModuleList(encoder_blocks))
 
-    decoder = Decoder(nn.ModuleList(decoder_blocks))
+    decoder = Decoder(d_model, nn.ModuleList(decoder_blocks))
     
     # Create the project layer
     projection_layer = ProjectionLayer(d_model, target_vocab_size)
