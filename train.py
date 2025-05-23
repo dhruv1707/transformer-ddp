@@ -246,7 +246,7 @@ def train_model(config):
             # print(f"Decoder-input: {decoder_input}")
             encoder_mask = batch["encoder_mask"].to(device) # (B, 1, 1, Seq_len)
             decoder_mask = batch["decoder_mask"].to(device) # (B, 1, Seq_len, Seq_len)
-            print(f"Encoder Mask shape: {encoder_mask.size()} Decoder mask shape: {decoder_mask.size()}")
+            # print(f"Encoder Mask shape: {encoder_mask.size()} Decoder mask shape: {decoder_mask.size()}")
             label = batch["label"].to(device) # (B, Seq_len)
 
             encoder_output = model.module.encode(encoder_input, encoder_mask) # (B, Seq_len, d_model)
